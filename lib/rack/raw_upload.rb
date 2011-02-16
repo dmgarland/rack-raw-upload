@@ -8,6 +8,7 @@ module Rack
       @paths = opts[:paths]
       @explicit = opts[:explicit]
       @tmpdir = opts[:tmpdir] || Dir::tmpdir
+      @buffer_size = opts[:buffer_size] || (1024 * 1024)
       @paths = [@paths] if @paths.kind_of?(String)
     end
 
@@ -29,7 +30,10 @@ module Rack
     def convert_and_pass_on(env)
       tempfile = Tempfile.new('raw-upload.', @tmpdir)
       tempfile = open(tempfile.path, "r+:BINARY")
-      tempfile << env['rack.input'].read
+      buffer = ''
+      while env['rack.input'].read(@buffer_size, buffer)
+        tempfile << buffer
+      end
       tempfile.flush
       tempfile.rewind
       fake_file = {
