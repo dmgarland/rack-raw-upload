@@ -1,3 +1,5 @@
+require 'mongo'
+
 module Rack
   class RawUpload
 
@@ -7,9 +9,10 @@ module Rack
       @app = app
       @paths = opts[:paths]
       @explicit = opts[:explicit]
-      @tmpdir = opts[:tmpdir] || Dir::tmpdir
-      @buffer_size = opts[:buffer_size] || (1024 * 1024)
+      @tmpdir = opts[:tmpdir] || Dir::tmpdir      
       @paths = [@paths] if @paths.kind_of?(String)
+      @db = Mongo::Connection.new.db(opts[:db])
+      @grid = Mongo::Grid.new(@db)
     end
 
     def call(env)
@@ -24,28 +27,23 @@ module Rack
       end
     end
 
-
     private
 
     def convert_and_pass_on(env)
-      tempfile = Tempfile.new('raw-upload.', @tmpdir)
-      tempfile = open(tempfile.path, "r+:BINARY")
-      buffer = ''
-      while env['rack.input'].read(@buffer_size, buffer)
-        tempfile << buffer
-      end
-      tempfile.flush
-      tempfile.rewind
-      fake_file = {
-        :filename => env['HTTP_X_FILE_NAME'],
-        :type => env['CONTENT_TYPE'],
-        :tempfile => tempfile,
-      }
+      id  = @grid.put(env['rack.input'], :filename => env['HTTP_X_FILE_NAME'])
       env['rack.request.form_input'] = env['rack.input']
       env['rack.request.form_hash'] ||= {}
       env['rack.request.query_hash'] ||= {}
-      env['rack.request.form_hash']['file'] = fake_file
-      env['rack.request.query_hash']['file'] = fake_file
+      env['rack.request.form_hash']['track'] ||= {}
+      env['rack.request.query_hash']['track'] ||= {}
+      env['rack.request.form_hash']['track']['file_id'] = id
+      env['rack.request.query_hash']['track']['file_id'] = id
+      env['rack.request.form_hash']['track']['file_name'] = env['HTTP_X_FILE_NAME']
+      env['rack.request.query_hash']['track']['file_name'] = env['HTTP_X_FILE_NAME']
+      env['rack.request.form_hash']['track']['file_size'] = env['rack.input'].size
+      env['rack.request.query_hash']['track']['file_size'] = env['rack.input'].size
+      env['rack.request.form_hash']['track']['file_type'] = env['CONTENT_TYPE']
+      env['rack.request.query_hash']['track']['file_type'] = env['CONTENT_TYPE']
       if query_params = env['HTTP_X_QUERY_PARAMS']
         require 'json'
         params = JSON.parse(query_params)
