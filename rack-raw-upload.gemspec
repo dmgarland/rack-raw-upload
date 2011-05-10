@@ -2,10 +2,10 @@ lib     = File.expand_path("../lib/rack/raw_upload.rb", __FILE__)
 version = File.read(lib)[/^\s*VERSION\s*=\s*(['"])(\d\.\d\.\d+)\1/, 2] #'# gedit messing with highlighting...
 
 Gem::Specification.new do |spec|
-  spec.name = 'rack-raw-upload'
-  spec.authors = "Pablo Brasero"
+  spec.name = 'dmgarland-rack-raw-upload'
+  spec.authors = "Pablo Brasero, Dan Garland"
   spec.email = "pablobm@gmail.com"
-  spec.homepage = 'https://github.com/newbamboo/rack-raw-upload'
+  spec.homepage = 'https://github.com/dmgarland/rack-raw-upload'
   spec.summary = %{Rack Raw Upload middleware}
   spec.description = %{Middleware that converts files uploaded with mimetype application/octet-stream into normal form input, so Rack applications can read these as normal, rather than as raw input.}
   spec.extra_rdoc_files = %w{LICENSE README.md}
