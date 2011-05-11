@@ -1,5 +1,5 @@
 require 'mongo'
-
+require 'rack/rewindable_input'
 module Rack
   class RawUpload
 
@@ -30,6 +30,7 @@ module Rack
     private
 
     def convert_and_pass_on(env)
+      env['rack.input'] = Rack::RewindableInput.new(env['rack.input']) unless env['rack.input'].is_a? Rack::RewindableInput 
       id  = @grid.put(env['rack.input'], :filename => env['HTTP_X_FILE_NAME'])
       env['rack.request.form_input'] = env['rack.input']
       env['rack.request.form_hash'] ||= {}
@@ -40,7 +41,7 @@ module Rack
       env['rack.request.query_hash']['track']['file_id'] = id
       env['rack.request.form_hash']['track']['file_name'] = env['HTTP_X_FILE_NAME']
       env['rack.request.query_hash']['track']['file_name'] = env['HTTP_X_FILE_NAME']
-      size = env['rack.input'].respond_to?(:size) ?  env['rack.input'].size : env['rack.input'].stat.size
+      size = env['rack.input'].instance_variable_get(:@rewindable_io).size
       env['rack.request.form_hash']['track']['file_size'] = size
       env['rack.request.query_hash']['track']['file_size'] = size
       env['rack.request.form_hash']['track']['file_type'] = env['CONTENT_TYPE']
