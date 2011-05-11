@@ -40,8 +40,9 @@ module Rack
       env['rack.request.query_hash']['track']['file_id'] = id
       env['rack.request.form_hash']['track']['file_name'] = env['HTTP_X_FILE_NAME']
       env['rack.request.query_hash']['track']['file_name'] = env['HTTP_X_FILE_NAME']
-      env['rack.request.form_hash']['track']['file_size'] = env['rack.input'].size
-      env['rack.request.query_hash']['track']['file_size'] = env['rack.input'].size
+      size = env['rack.input'].respond_to?(:size) ?  env['rack.input'].size : env['rack.input'].stat.size
+      env['rack.request.form_hash']['track']['file_size'] = size
+      env['rack.request.query_hash']['track']['file_size'] = size
       env['rack.request.form_hash']['track']['file_type'] = env['CONTENT_TYPE']
       env['rack.request.query_hash']['track']['file_type'] = env['CONTENT_TYPE']
       if query_params = env['HTTP_X_QUERY_PARAMS']
